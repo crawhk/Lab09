@@ -223,13 +223,58 @@ False Negative Rate: Proportion of recidivists (two_year_recid = 1) who were cla
 ```{r}
 compas %>% 
    filter(race %in% c("Caucasian", "African-American")) %>%
-  group_by()
+  group_by(race) %>%  
+  summarise(
+    FP = sum(decile_score >= 7 & two_year_recid == 0) / sum(two_year_recid == 0)
+  )
   
 ```
+
+The false-positive rate for African-Americans is much higher (25%) compared to Caucasians (9%) - suggesting a greater number of African-Americans did not recidivate even though they were classified as high risk 
+
+```{r}
+compas %>% 
+   filter(race %in% c("Caucasian", "African-American")) %>%
+  group_by(race) %>%  
+  summarise(
+    FN = sum(decile_score <= 4 & two_year_recid ==1)/ sum(two_year_recid == 1)) 
+```
+
+The false-negative rate for African-Americans is lower (28%) compared to Caucasians (48%) - suggesting a greater number of Caucasians did recidivate, but were classified as low risk 
 
 
 ## Exercise 11 
 > Create a visualization comparing these metrics between Black and white defendants. What disparities do you observe?
+
+```{r}
+error_rates <- compas %>%
+  filter(race %in% c("African-American", "Caucasian")) %>%
+  group_by(race) %>%
+  summarise(
+    FP = sum(decile_score >= 7 & two_year_recid == 0) / sum(two_year_recid == 0),
+    FN = sum(decile_score <= 4 & two_year_recid == 1) / sum(two_year_recid == 1)
+  )
+```
+
+```{r}
+
+error_rates_long <- error_rates %>%
+  pivot_longer(cols = c(FP, FN), names_to = "ErrorType", values_to = "Rate")
+
+```
+
+```{r}
+ggplot(error_rates_long, aes(x = race, y = Rate, fill = ErrorType)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "False Positive and False Negative Rates by Race",
+    x = "Race",
+    y = "Rate",
+    fill = "Error Type"
+  )
+```
+
 
 # Part 4: Understanding the source of bias 
 
@@ -239,18 +284,39 @@ Note that their are many ways to measure bias in an algorithm. In this exercise,
 ## Exercise 12
 > Let’s investigate what factors might be contributing to the disparities we’ve observed. Create a visualization showing the relationship between prior convictions (priors_count) and risk score (decile_score), colored by race. Does the algorithm weigh prior convictions differently for different racial groups?
 
+```{r}
+compas %>%
+  filter(race %in% c("Caucasian", "African-American")) %>%
+  ggplot(aes(x = decile_score, fill = race)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Distribution of Risk Scores by Race",
+    x = "Risk Score (Decile)",
+    y = "Number of Defendants"
+  ) 
+
+```
+Yes - there appears to be a significant drop in the number of defendants as risk scores increase for Caucasian individuals but a steady trend for African-Americans. More Caucasian defendants are labeled as low risk while black defendants are more likely med or high risk. 
+
 ## Exercise 13
 > In 2016, ProPublica and Northpointe (the company that created COMPAS) had a disagreement about how to measure fairness. ProPublica focused on error rates (false positives and false negatives), while Northpointe focused on calibration (whether the same score means the same probability of recidivism across groups). Based on your analysis, do you see evidence supporting ProPublica’s claim that the algorithm is biased? Explain your reasoning.
 
+I think both ProPublica and Northpoint are correct - there are differences in error rates as well as whether probabilities are the same across group. Both of these measures of fairness lead to the same concern. 
 
 # Part 5: Designing fairer algorithms 
 
 ## Exercise 14
 > If you were tasked with creating a fairer risk assessment algorithm, what changes would you make to address the disparities you’ve observed?
 
+I would go back to the start and look at what type of data was being fed into the algorithm and retrain it based on data that was more accurate
+
 ## Exercise 15
 > Different definitions of fairness can sometimes be mathematically incompatible with each other. What trade-offs might be involved in designing a “fair” algorithm for criminal risk assessment?
 
+The fairness measures used here are not necessarily incompatible with each other, rather they are looking at different things. I think it is important to have a variety of measures. However, there are larger moral, policy, legal and political implications. 
+
 ## Exercise 16
 > Beyond technical solutions, what policy changes might be needed to ensure that algorithmic risk assessments are used fairly in the criminal justice system?
+
+I think a big policy change should be made regarding the transparency and disclosure of how risk-assessment models developed - specifically, how are trained and what data they are trained on. 
 
