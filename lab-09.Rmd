@@ -131,7 +131,7 @@ compas %>%
   group_by(decile_score) %>%
   summarise(mean_recid = mean(two_year_recid)) %>%
   ggplot(aes(x = decile_score, y = mean_recid)) +
-  geom_col(fill = "steelblue") +
+  geom_col(fill = "grey") +
   labs(
     title = "Average Recidivism Rate by Risk Score",
     x = "Risk Score (Decile)",
@@ -148,12 +148,36 @@ A defendant with a high risk score (decile_score >= 7) did recidivate (two_year_
 A defendant with a low risk score (decile_score <= 4) did not recidivate (two_year_recid = 0)
 
 ```{r}
+compas <- compas %>%
+  mutate(highrisk = ifelse(decile_score >= 7 & two_year_recid == 1, 1, 0))
 
 ```
 
+```{r}
+compas <- compas %>%
+  mutate(lowrisk = ifelse(decile_score <= 4 & two_year_recid == 0, 1, 0))
+
+```
 
 ## Exercise 7 
 > How well does the COMPAS algorithm perform overall? What percentage of its predictions are correct based on your calculation above?
+
+```{r}
+compas <- compas %>%
+  mutate(correct_pred = ifelse(highrisk == 1 | lowrisk == 1, 1, 0))
+```
+
+```{r}
+accuracy <- mean(compas$correct_pred) * 100
+paste0("Overall accuracy: ", round(accuracy, 2), "%")
+
+compas %>%
+  count(correct_pred) %>%
+  mutate(percent = round(100 * n / sum(n), 2))
+
+```
+
+The Compas algorithm is roughly 56% accurate... I would hope for better accuracy when determining life altering things such as incarceration ... 
 
 # Part 3: Investigating disparities 
 
@@ -162,13 +186,47 @@ Now let’s assess the predictive accuracy of the COMPAS algorithm across differ
 ## Exercise 8
 > Create visualizations comparing the distribution of risk scores (decile_score) between Black and white defendants. Do you observe any differences?
 
+```{r}
+compas %>%
+  filter(race %in% c("Caucasian", "African-American")) %>%
+  ggplot(aes(x = decile_score, fill = race)) +
+  geom_bar()+
+  labs(
+    title = "Distribution of Risk Scores by Race",
+    x = "Risk Score (Decile)",
+    y = "Count"
+  ) 
+```
+
 ## Exercise 9 
 > Calculate the percentage of Black defendants and white defendants who were classified as high risk (decile_score >= 7). Is there a disparity?
+
+```{r}
+compas %>%
+  filter(race %in% c("Caucasian", "African-American")) %>%
+  mutate(highrisk_ = ifelse(decile_score >= 7, 1, 0)) %>%
+  group_by(race) %>%
+  summarise(
+    total = n(),
+    highrisk = sum(highrisk_),
+    proportionHR = round(mean(highrisk_), 2)
+  )
+```
+
+39% of African-Americans are classified as high risk whereas only 17% of Caucasians are classified as high risk. 
 
 ## Exercise 10
 > Now, let’s look at the accuracy of predictions for different racial groups. Calculate the following metrics separately for Black defendants and white defendants:
 False Positive Rate: Proportion of non-recidivists (two_year_recid = 0) who were classified as high risk (decile_score >= 7)
 False Negative Rate: Proportion of recidivists (two_year_recid = 1) who were classified as low risk (decile_score <= 4)
+
+```{r}
+compas %>% 
+   filter(race %in% c("Caucasian", "African-American")) %>%
+  group_by()
+  
+```
+
 
 ## Exercise 11 
 > Create a visualization comparing these metrics between Black and white defendants. What disparities do you observe?
