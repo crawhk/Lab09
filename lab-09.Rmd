@@ -28,11 +28,29 @@ compas <- read.csv("data/compas-scores-2-years.csv")
 ## Exercise 1
 > What are the dimensions of the COMPAS dataset? (Hint: Use inline R code and functions like nrow and ncol to compose your answer.) What does each row in the dataset represent? What are the variables?
 
+```{r}
+ncol(compas)
+nrow(compas)
+```
+There are 53 columns (variables) and 7214 rows (offender observations)
+
 ## Exercise 2
 > How many unique defendants are in the dataset? Is this the same as the number of rows? If not, why might there be a difference?
 
+```{r}
+length(unique(compas$id))
+```
+There are 7214 unique defendants - suggesting that each offender offended 1 time 
+
 ## Exercise 3
 > Let’s examine the distribution of the COMPAS risk scores (decile_score)! What do you observe about the shape of this distribution?
+
+```{r}
+ggplot(compas, aes(x = decile_score)) +
+  geom_histogram(binwidth = 1)
+```
+
+The shape of the distribution is right skewed
 
 ## Exercise 4
 > Let’s examine the demographic distribution in our dataset. Create visualizations to show:
@@ -40,18 +58,99 @@ The distribution of defendants by race
 The distribution of defendants by sex
 The distribution of defendants by age category
 
+```{r}
+ggplot(compas, aes(x = race, fill = race)) + 
+  geom_bar()+
+  labs(
+    x = "Race",
+    y = "Count",
+    title = "Distribution of Defendants by Race")
+```
+
+```{r}
+ggplot(compas, aes(x = sex, fill = sex)) + 
+  geom_bar()+
+  labs(
+    x = "Sex",
+    y = "Count",
+    title = "Distribution of Defendants by Sex")
+```
+
+```{r}
+ggplot(compas, aes(x = age_cat, fill = age_cat)) + 
+  geom_bar()+
+  labs(
+    x = "Age Category",
+    y = "Count",
+    title = "Distribution of Defendants by Age Category")
+```
+
 > For an extra challenge, try to create a single visualization that shows all three 
 distributions side by side. You can use facets or color to differentiate between the different demographic groups. 
+
+```{r}
+compas_long <- compas %>%
+  pivot_longer(cols = c(race, sex, age_cat),
+               names_to = "Variable",
+               values_to = "Category")
+```
+
+
+```{r}
+ggplot(compas_long, aes(x = Category, fill = Category)) +
+  geom_bar(show.legend = FALSE) +
+  facet_wrap(~ Variable, scales = "free_x") +
+  labs(
+    x = NULL,
+    y = "Count",
+    title = "Distribution of Defendants by Race, Sex, and Age Category"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+```
+
 
 # Part 2: Risk Scores and Recidivism 
 
 ## Exercise 5 
 > Create a visualization showing the relationship between risk scores (decile_score) and actual recidivism (two_year_recid). Do higher risk scores actually correspond to higher rates of recidivism?
 
+```{r}
+ggplot(compas, aes(x = decile_score , y = two_year_recid)) +
+  geom_point(position = position_jitter (height =.05), alpha = .3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relationship Between Risk Scores and Actual Recidivism")
+```
+
+```{r}
+compas %>%
+  group_by(decile_score) %>%
+  summarise(mean_recid = mean(two_year_recid)) %>%
+  ggplot(aes(x = decile_score, y = mean_recid)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "Average Recidivism Rate by Risk Score",
+    x = "Risk Score (Decile)",
+    y = "Proportion Recidivated"
+  ) +
+  theme_minimal()
+```
+
+Higher risk scores appear to correspond with higher rates of recidivism. 
+
 ## Exercise 6
 > Calculate the overall accuracy of the COMPAS algorithm. For this exercise, consider a prediction “correct” if:
 A defendant with a high risk score (decile_score >= 7) did recidivate (two_year_recid = 1)
 A defendant with a low risk score (decile_score <= 4) did not recidivate (two_year_recid = 0)
+
+```{r}
+
+```
+
 
 ## Exercise 7 
 > How well does the COMPAS algorithm perform overall? What percentage of its predictions are correct based on your calculation above?
