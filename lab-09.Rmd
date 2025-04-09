@@ -1,0 +1,28 @@
+---
+title: "Lab 09: Algorithmic Bias"
+author: "Insert your name here"
+date: "Insert date here"
+output: github_document
+---
+
+## Load Packages and Data  
+
+First, let's load the necessary packages:  
+
+```{r load-packages, message = FALSE}
+library(tidyverse)
+library(fairness)
+```
+
+### The data
+
+For this lab, we'll use the COMPAS dataset compiled by ProPublica. The data has been preprocessed and cleaned for you. You'll have to load it yourself. The dataset is available in the `data` folder, but I've changed the file name from `compas-scores-two-years.csv` to `compas-scores-2-years.csv`. I've done this help you practice debugging code when you encounter an error.
+
+```{r}
+compas <- read_csv("data/compas-scores-two-years.csv")
+```
+
+
+## Additional Exercises  
+
+Almost there! Keep building on your work and follow the same structure for any remaining exercises. Each exercise builds on the last, so take your time and make sure your code is working as expected.  
